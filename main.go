@@ -75,27 +75,27 @@ func decryptPath(path string) {
 		usage(2, "Error: cannot decrypt file (key not correct or file modified)")
 	}
 
-	// Create folder
-	err, folder := nil, ""
+	// Create directory
+	err, dir := nil, ""
 	for err == nil {
 		num := make([]byte, 4)
 		io.ReadFull(rand.Reader, num)
-		folder = self + "_" + fmt.Sprintf("%x", num)
-		_, err = os.Stat(folder)
+		dir = self + "_" + fmt.Sprintf("%x", num)
+		_, err = os.Stat(dir)
 	}
-	err = os.MkdirAll(folder, 0755)
+	err = os.MkdirAll(dir, 0755)
 	if err != nil {
-		usage(2, "Error: cannot create folder for decryption: " + folder)
+		usage(2, "Error: cannot create directory for decryption: " + dir)
 	}
 
 	// Decompress
-	err = decompress(bytes.NewReader(AEScontent), folder)
+	err = decompress(bytes.NewReader(AEScontent), dir)
 	if err != nil {
 		usage(2, fmt.Sprintf("%v", err))
 	}
 
 	// Notify
-	fmt.Println("File decrypted into '" + folder + "'")
+	fmt.Println("File decrypted into '" + dir + "'")
 }
 
 func encryptPath(path string) {
@@ -103,7 +103,7 @@ func encryptPath(path string) {
 	nonce := make([]byte, 12)
 	io.ReadFull(rand.Reader, nonce)
 
-	// Compress file or folder
+	// Compress file or directory
 	var buf bytes.Buffer
 	if err := compress(path, &buf)
 	err != nil {
