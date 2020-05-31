@@ -82,7 +82,7 @@ func compress(path string, buf io.Writer) error {
 // Check path traversal and correct forward slashes
 func validRelPath(p string) bool {
 	if p == "" || strings.Contains(p, `\`) || strings.HasPrefix(p, "/") ||
-	strings.Contains(p, "../") {
+			strings.Contains(p, "../") {
 		return false
 	}
 	return true

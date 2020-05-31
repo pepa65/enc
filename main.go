@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	self    string
+	self  string
 	magic = []byte{1, 1, 1, 1}
 )
 
@@ -133,7 +133,7 @@ func encryptPath(path string) {
 	fmt.Printf("Decryption key:\n%032x\n", key)
 }
 
-func promptKey() ([]byte) {
+func promptKey() []byte {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("Enter decryption key (256 bits, 32 Bytes, 64 hexadecimals):")
 	strkey, err := reader.ReadString('\n')
@@ -149,7 +149,7 @@ func promptKey() ([]byte) {
 	return key
 }
 
-func wrapKey(key []byte) (cipher.AEAD) {
+func wrapKey(key []byte) cipher.AEAD {
 	// Make AES-256 block from 32-Byte key
 	cipherAES, err := aes.NewCipher(key)
 	if err != nil {
