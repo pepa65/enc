@@ -18,6 +18,12 @@ encrypted file.
   - `GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w" -o enc_bsd`
   - `GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o enc_osx`
   - `GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o enc.exe`
+* **Download binaries**
+  - Linux (amd64) `https://github.com/pepa65/enc/raw/master/enc`
+  - Linux (arm) `https://github.com/pepa65/enc/raw/master/enc_pi`
+  - FreeBSD `https://github.com/pepa65/enc/raw/master/enc_bsd`
+  - OSX `https://github.com/pepa65/enc/raw/master/enc_osx`
+  - Windows (x86_64) `https://github.com/pepa65/enc/raw/master/enc.exe`
 
 ## Usage
 ```
