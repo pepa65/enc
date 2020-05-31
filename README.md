@@ -1,8 +1,11 @@
 # Enc
 **Encrypt/decrypt files/directories**
 * Repo: https://github.com/pepa65/enc
-* After: https://github.com/mimoo/eureka
 * Contact: pepa65 <pepa65@passchier.net>
+* After: https://github.com/mimoo/eureka
+  - Implementation is not compatible, because `enc` uses a random nonce as
+opposed to a fixed one, and `enc` embeds 4 magic bytes at the start of each
+encrypted file.
 
 ## Install
 * **Go get** If [Golang](https://golang.org/) is installed properly:
