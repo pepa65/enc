@@ -8,13 +8,13 @@
 * **Go get** If [Golang](https://golang.org/) is installed properly:
 `go get github.com/pepa65/enc`
 * **Go build/install**
- - `git clone https://github.com/pepa65/enc; cd enc; go install`
- - Smaller binary: `go build -ldflags="-s -w"; upx --brute enc`
-* ** Build for other architectures**
- - `GOOS=linux GOARCH=arm go build -ldflags="-s -w" -o enc_pi`
- - `GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w" -o enc_bsd`
- - `GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o enc_osx`
- - `GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o enc.exe`
+  - `git clone https://github.com/pepa65/enc; cd enc; go install`
+  - Smaller binary: `go build -ldflags="-s -w"; upx --brute enc`
+* **Build for other architectures**
+  - `GOOS=linux GOARCH=arm go build -ldflags="-s -w" -o enc_pi`
+  - `GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w" -o enc_bsd`
+  - `GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o enc_osx`
+  - `GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o enc.exe`
 
 ## Usage
 ```
