@@ -44,7 +44,7 @@ func main() {
 		}
 	}
 
-	// If path is a file and has the right magic: try decrypting
+	// If path is a file and has the right magic: try decrypting archive
 	f, err := os.Open(path)
 	if err != nil {
 		usage(1, "Cannot find path: '" + path + "'")
@@ -62,17 +62,17 @@ func main() {
 }
 
 func decryptPath(path string) {
-	// Read encrypted file, magic bytes already checked
+	// Read encrypted archive, magic bytes already checked
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		usage(1, "Error: cannot open file: " + path)
+		usage(1, "Error: cannot open " + self + "-archive: " + path)
 	}
 	nonce := file[4:16]
 	key := promptKey()
 	AESgcm := wrapKey(key)
 	AEScontent, err := AESgcm.Open(nil, nonce, file[16:], nil)
 	if err != nil {
-		usage(2, "Error: cannot decrypt file (key not correct or file modified)")
+		usage(2, "Error: cannot decrypt archive (modified, or key not correct)")
 	}
 
 	// Create directory
@@ -95,7 +95,7 @@ func decryptPath(path string) {
 	}
 
 	// Notify
-	fmt.Println("File decrypted into '" + dir + "'")
+	fmt.Println("Archive decrypted into directory '" + dir + "'")
 }
 
 func encryptPath(path string) {
@@ -107,7 +107,7 @@ func encryptPath(path string) {
 	var buf bytes.Buffer
 	if err := compress(path, &buf)
 	err != nil {
-		usage(1, "Error: file not found: " + path)
+		usage(1, fmt.Sprintf("Error: path '%v' not found", path))
 	}
 	// Encrypt compressed content
 	key := make([]byte, 32)
@@ -115,20 +115,20 @@ func encryptPath(path string) {
 	AESgcm := wrapKey(key)
 	body := AESgcm.Seal(nil, nonce, buf.Bytes(), nil)
 
-	// Write file to disk
+	// Write archive to disk
 	file := path + "." + self
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		usage(2, fmt.Sprintf("%v", err))
 	}
 	defer f.Close()
-	// Encrypted file: magic(0..3) nonce(4..15) body(16..)
+	// Encrypted archive: magic(0..3) nonce(4..15) body(16..)
 	f.Write(magic)
 	f.Write(nonce)
 	f.Write(body)
 
 	// Notify
-	fmt.Printf("Encrypted file: " + file + "\nUse '" + self + "' to decrypt")
+	fmt.Printf("Encrypted archive: " + file + "\nUse '" + self + "' to decrypt")
 	fmt.Println(" (https://github.com/pepa65/enc)")
 	fmt.Printf("Decryption key:\n%032x\n", key)
 }
@@ -138,7 +138,7 @@ func promptKey() []byte {
 	fmt.Println("Enter decryption key (256 bits, 32 Bytes, 64 hexadecimals):")
 	strkey, err := reader.ReadString('\n')
 	if err != nil {
-		usage(2, fmt.Sprintf("Error reading key: %v", err))
+		usage(2, fmt.Sprintf("Error %v: cannot read key", err))
 	}
 
 	// Check key
@@ -169,13 +169,13 @@ func usage(ret int, mes string) {
 	}
 	if ret == 1 {
 		fmt.Printf(self + " - Encrypt/decrypt files/directories\nUsage:  " + self)
-		fmt.Printf(" [-e|--encrypt] <path>\n    If the -e/--encrypt flag is used")
-		fmt.Printf(" or if <path> is not an " + self + "-encrypted\n")
-		fmt.Printf("    file, then Encrypt. The encrypted archive gets a .")
-		fmt.Printf(self + " extension.\n    If <path> is an " + self)
-		fmt.Println("-encrypted file, then Decrypt into directory " + self + "_*.")
-		fmt.Printf("    " + self + "-encrypted files start with 4 distinctive")
-		fmt.Println(" 'magic' bytes (all 1).")
+		fmt.Printf(" [-e|--encrypt] <path>\n  Encrypt if the -e/--encrypt flag is")
+		fmt.Printf(" used or if <path> is not an " + self + "-encrypted\n")
+		fmt.Printf("  archive, otherwise decrypt. The encrypted archive gets a .")
+		fmt.Printf(self + " extension.\n  An " + self + "-encrypted archive gets")
+		fmt.Printf(" decrypted into a directory " + self + "_<random-suffix>.\n")
+		fmt.Printf("  All " + self + "-encrypted archives start with 4 ")
+		fmt.Println("distinctive 'magic' bytes (all 1).")
 	}
 	os.Exit(ret)
 }

@@ -24,12 +24,15 @@ encrypted file.
   - [FreeBSD](https://github.com/pepa65/enc/raw/master/enc_bsd)
   - [OSX](https://github.com/pepa65/enc/raw/master/enc_osx)
   - [Windows (x86_64)](https://github.com/pepa65/enc/raw/master/enc.exe)
+* **Add magic for the `file` command**
+  - `echo '0 long 0x01010101 enc encrypted data, gitlab.com/pepa65/enc' |
+    sudo tee -a /etc/magic`
 
 ## Usage
-```
-enc [-e|--encrypt] <path>
-    If the -e/--encrypt flag is used or if <path> is not an enc-encrypted
-    file, then Encrypt. The encrypted archive gets a .enc extension.
-    If <path> is an enc-encrypted file, then Decrypt into directory enc_*.
-    enc-encrypted files start with 4 distinctive 'magic' bytes (all 1).
-```
+`enc [-e|--encrypt] <path>`
+
+Encrypt if the -e/--encrypt flag is used or if <path> is not an enc-encrypted
+archive, otherwise decrypt. The encrypted archive gets a .enc extension.
+An enc-encrypted archive gets decrypted into a directory enc_<random-suffix>.
+All enc-encrypted archives start with 4 distinctive 'magic' bytes (all 1).
+
