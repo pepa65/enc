@@ -128,14 +128,14 @@ func encryptPath(path string) {
 	f.Write(body)
 
 	// Notify
-	fmt.Printf("Encrypted archive: " + file + "\nUse '" + self + "' to decrypt")
-	fmt.Println(" (https://github.com/pepa65/enc)")
-	fmt.Printf("Decryption key:\n%032x\n", key)
+	fmt.Printf("Encrypted archive: " + file + "\nDecrypt with '" + self)
+	fmt.Println("' (https://github.com/pepa65/enc) using decryption key:")
+	fmt.Printf("%032x\n", key)
 }
 
 func promptKey() []byte {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Enter decryption key (256 bits, 32 Bytes, 64 hexadecimals):")
+	fmt.Println("Enter decryption key of 64 hexadecimals (32 Bytes, 256 bits):")
 	strkey, err := reader.ReadString('\n')
 	if err != nil {
 		usage(2, fmt.Sprintf("Error %v: cannot read key", err))
@@ -144,7 +144,7 @@ func promptKey() []byte {
 	// Check key
 	key, err := hex.DecodeString(strings.TrimSpace(strkey))
 	if err != nil || len(key) != 32 {
-		usage(2, "Error: key is not 256 bits / 32 Bytes / 64 hexadecimals")
+		usage(2, "Error: key is not 64 hexadecimals (32 Bytes, 256 bits)")
 	}
 	return key
 }
