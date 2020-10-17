@@ -30,18 +30,12 @@ func main() {
 		usage(1, "")
 	}
 	path, encrypt := os.Args[1], false
-	if os.Args[1] == "-e" || os.Args[1] == "--encrypt" {
-		if len(os.Args) < 3 {
-			usage(1, "Error: path mandatory after -e/--encrypt")
-		}
-		if len(os.Args) > 3 {
-			usage(1, "Error: only path needed after -e/--encrypt")
-		}
+	if (len(os.Args) > 3 && os.Args[1] != "-e" && os.Args[1] != "--encrypt") ||
+			len(os.Args) > 2 {
+		usage(1, "Error: too many arguments")
+	}
+	if len(os.Args) > 2 {
 		path, encrypt = os.Args[2], true
-	} else {
-		if len(os.Args) > 2 {
-			usage(1, "Error: only path needed as argument")
-		}
 	}
 
 	// If path is a file and has the right magic: try decrypting archive
