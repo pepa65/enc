@@ -8,6 +8,7 @@ opposed to a fixed one, and `enc` embeds 4 magic bytes at the start of each
 encrypted file.
 
 ## Install
+* **gobinaries.com**: `wget -qO- gobinaries.com/pepa65/enc |sh`
 * **Go get** If [Golang](https://golang.org/) is installed properly:
 `go get github.com/pepa65/enc`
 * **Go build/install**
