@@ -7,6 +7,35 @@
 opposed to a fixed one, and `enc` embeds 4 magic bytes at the start of each
 encrypted file.
 
+## Usage
+```
+enc - Encrypt/decrypt files/directories
+
+Usage:  enc [-e|--encrypt] [-p|--password] [-h|--help] <path>
+
+    -e/--encrypt:   To force encryption of an already encrypted archive.
+                    Only enc-encrypted archives get decrypted (recognizable by
+                    starting with 4 distinctive 'magic' bytes 0x01010101). They
+                    get decrypted into a directory "enc_<random-suffix>".
+                    The default operation is encryption, resulting in an
+                    enc-encrypted compressed archive, ending with ".enc".
+    -p|--password:  Instead of encrypting with a randomly generated 32 byte
+                    hexadecimal password, the user is prompted for a password.
+    -h|--help:      Only show this help text, nothing else
+```
+
+### Examples
+Making a compressed encrypted archive with a 32 byte hexadecimal password out
+of `file`, resulting in `file.enc`:  `enc file`
+
+Making a compressed encrypted archive with a user-supplied password out of the
+contents of directory `dir`, resulting in `dir.enc`:  `enc -p dir`
+
+Decrypting the contents of enc-encrypted archive `dir.enc` into directory
+`enc_????????`: `enc dir.enc`
+
+Encrypting enc-encrypted archive `file.enc` again: `enc --encrypt file.enc`
+
 ## Install
 * **gobinaries.com**: `wget -qO- gobinaries.com/pepa65/enc |sh`
 * **Go get** If [Golang](https://golang.org/) is installed properly:
@@ -28,12 +57,3 @@ encrypted file.
 * **Add magic for the `file` command**
   - `echo '0 long 0x01010101 enc encrypted data, gitlab.com/pepa65/enc' |
     sudo tee -a /etc/magic`
-
-## Usage
-`enc [-e|--encrypt] <path>`
-
-Encrypt if the -e/--encrypt flag is used or if <path> is not an enc-encrypted
-archive, otherwise decrypt. The encrypted archive gets a .enc extension.
-An enc-encrypted archive gets decrypted into a directory enc_<random-suffix>.
-All enc-encrypted archives start with 4 distinctive 'magic' bytes (all 1).
-

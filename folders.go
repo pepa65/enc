@@ -52,7 +52,7 @@ func compress(path string, buf io.Writer) error {
 				return err
 			}
 			// No directory: write
-			if !f.IsDir() {
+			if !fi.IsDir() {
 				data, err := os.Open(file)
 				if err != nil {
 					return err
