@@ -5,36 +5,41 @@
 * After: https://github.com/mimoo/eureka
   - Implementation is not compatible, because `enc` uses a random nonce as
 opposed to a fixed one, and `enc` embeds 4 magic bytes at the start of each
-encrypted file.
+encrypted file. It also allows using user-supplied passwords, either on the
+commandline or through stdin.
 
 ## Usage
 ```
 enc - Encrypt/decrypt files/directories
-
-Usage:  enc [-e|--encrypt] [-p|--password] [-h|--help] <path>
-
-    -e/--encrypt:   To force encryption of an already encrypted archive.
-                    Only enc-encrypted archives get decrypted (recognizable by
-                    starting with 4 distinctive 'magic' bytes 0x01010101). They
-                    get decrypted into a directory "enc_<random-suffix>".
-                    The default operation is encryption, resulting in an
-                    enc-encrypted compressed archive, ending with ".enc".
-    -p|--password:  Instead of encrypting with a randomly generated 32 byte
-                    hexadecimal password, the user is prompted for a password.
-    -h|--help:      Only show this help text, nothing else
+Usage:  enc [-e|--encrypt] [-p|--prompt | -s|--stdin] [-h|--help] <path>
+    -e/--encrypt:  To force encryption of an already encrypted archive.
+                   Only enc-encrypted archives get decrypted (recognizable by
+                   starting with 4 distinctive 'magic' bytes 0x01010101). They
+                   get decrypted into a directory "enc_<random-suffix>".
+                   The default operation is encryption, resulting in an
+                   enc-encrypted compressed archive, ending with ".enc".
+    -p|--prompt:   Instead of encrypting with a randomly generated 32 byte
+                   hexadecimal password, the user is prompted for a password.
+    -s|--stdin:    Instead of encrypting with a randomly generated 32 byte
+                   hexadecimal password, the password is read from stdin.
+    -h|--help:     Just show this help text.
 ```
 
 ### Examples
-Making a compressed encrypted archive with a 32 byte hexadecimal password out
-of `file`, resulting in `file.enc`:  `enc file`
+`enc file` - Making a compressed encrypted archive with a 32 byte hexadecimal
+password out of `file`, resulting in `file.enc`.
 
-Making a compressed encrypted archive with a user-supplied password out of the
-contents of directory `dir`, resulting in `dir.enc`:  `enc -p dir`
+`enc -p dir` - Making a compressed encrypted archive with a prompted-for
+password out of the contents of directory `dir`, resulting in `dir.enc`.
 
-Decrypting the contents of enc-encrypted archive `dir.enc` into directory
-`enc_????????`: `enc dir.enc`
+`enc dir.enc` - Decrypting the contents of enc-encrypted archive `dir.enc`
+into directory `enc_????????`.
 
-Encrypting enc-encrypted archive `file.enc` again: `enc --encrypt file.enc`
+`cat passwordfile |enc -s dir` - Making a compressed encrypted archive with the
+content of `passwordfile` as the password of the contents of directory `dir`,
+resulting in `dir.enc`.
+
+`enc -e file.enc` - Encrypting enc-encrypted archive `file.enc` again.
 
 ## Install
 * **gobinaries.com**: `wget -qO- gobinaries.com/pepa65/enc |sh`

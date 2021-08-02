@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"bufio"
+	"bufio"
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
@@ -19,9 +19,10 @@ import (
 )
 
 var (
-	self  string
+	self string
 	magic = []byte{1, 1, 1, 1}
 	password = false
+	stdin = false
 )
 
 func main() {
@@ -39,7 +40,8 @@ func main() {
 	for i < len(os.Args) {
 		switch os.Args[i] {
 		case "-e","--encrypt": encrypt = true
-		case "-p","--password": password = true
+		case "-p","--prompt": password = true
+		case "-s","--stdin": stdin = true
 		case "-h","--help": usage(1, "")
 		default:
 			if os.Args[i][0] == '-' {
@@ -114,48 +116,61 @@ func encryptPath(path string) {
 
 	// Compress file or directory
 	var buf bytes.Buffer
-	if err := compress(path, &buf)
-	err != nil {
+	err := compress(path, &buf)
+	if err != nil {
 		usage(1, fmt.Sprintf("Error: path '%v' not found", path))
 	}
+
 	// Encrypt compressed content
 	key := make([]byte, 32)
-	var pwd []byte
-	if password {
-		retry := 3
-		for retry > 0 {
-			fmt.Printf("Set password: ")
-			pwd, _ = terminal.ReadPassword(int(syscall.Stdin))
-			if len(pwd) == 0 || len([]byte(pwd)) > 30 {
-				fmt.Printf("\nAn empty password is not safe")
-			} else {
-				fmt.Printf("\nConfirm password: ")
-				pwd2, _ := terminal.ReadPassword(int(syscall.Stdin))
-				fmt.Println("")
-				if bytes.Equal(pwd, pwd2) {
-					break
-				}
-				fmt.Printf("Passwords must be the same")
+	if !password && !stdin {
+		io.ReadFull(rand.Reader, key)
+	} else {
+		pwd := []byte{}
+		if stdin {
+			in := bufio.NewScanner(os.Stdin)
+			for in.Scan() {
+				pwd = append(pwd, in.Bytes()...)
 			}
-			retry--
-			if retry > 0 {
+		} else { // password
+			for {
+				fmt.Printf("Set password: ")
+				pwd, _ = terminal.ReadPassword(int(syscall.Stdin))
+				if len(pwd) == 0 {
+					fmt.Printf("\nAn empty password is not safe")
+				} else {
+					fmt.Printf("\nConfirm password (empty to cancel): ")
+					pwd2, _ := terminal.ReadPassword(int(syscall.Stdin))
+					fmt.Println("")
+					if len(pwd2) == 0 {
+						os.Exit(1)
+					}
+					if bytes.Equal(pwd, pwd2) {
+						break
+					}
+					fmt.Printf("Passwords must be the same")
+				}
 				fmt.Println(", retry")
-			} else {
-				fmt.Printf("\nStopping here")
-				os.Exit(1)
 			}
 		}
-		sha := sha256.Sum256([]byte(pwd))
-		key = sha[0:32]
-  } else {
-		io.ReadFull(rand.Reader, key)
+		key32 := false
+		if len(pwd) == 64 {
+			key,err = hex.DecodeString(string(pwd))
+			if err == nil {
+				key32 = true
+			}
+		}
+		if !key32 {
+			sha := sha256.Sum256(pwd)
+			key = sha[0:32]
+		}
 	}
 	AESgcm := wrapKey(key)
 	body := AESgcm.Seal(nil, nonce, buf.Bytes(), nil)
 
 	// Write archive to disk
 	file := path + "." + self
-	f, err := os.OpenFile(file, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		usage(2, fmt.Sprintf("%v", err))
 	}
@@ -168,7 +183,7 @@ func encryptPath(path string) {
 	// Notify
 	fmt.Printf("Encrypted archive: %s\nDecrypt with '%s'", file, self)
 	fmt.Printf(" (https://github.com/pepa65/enc)")
-	if !password {
+	if !password && !stdin {
 		fmt.Printf(" using decryption key:\n%032x", key)
 	}
 	fmt.Println()
@@ -180,17 +195,14 @@ func promptKey() []byte {
 	if err != nil {
 		usage(2, fmt.Sprintf("Error %v: cannot read key", err))
 	}
-	if len(strkey) < 32 {
-		key := sha256.Sum256([]byte(strkey))
-		return key[0:32]
-	} else {
-		// Check key
-		key, err := hex.DecodeString(strings.TrimSpace(string(strkey)))
-		if err != nil {
-			usage(2, "Error: invalid key")
+	if len(strkey) == 64 {
+		key, err := hex.DecodeString(string(strkey))
+		if err == nil {
+			return key[0:32]
 		}
-		return key
 	}
+	key := sha256.Sum256([]byte(strkey))
+	return key[0:32]
 }
 
 func wrapKey(key []byte) cipher.AEAD {
@@ -213,21 +225,23 @@ func usage(ret int, mes string) {
 	}
 	if ret == 1 {
 		fmt.Printf(self + " - Encrypt/decrypt files/directories\nUsage:  ")
-		fmt.Printf(self + "  [-e|--encrypt] [-p|--password] [-h|--help]  ")
-		fmt.Printf("<path>\n    -e/--encrypt:   To force encryption of an ")
-		fmt.Printf("already encrypted archive.\n                    Only ")
+		fmt.Printf(self + " [-e|--encrypt] [-p|--prompt | -s|--stdin] [-h|--help] ")
+		fmt.Printf("<path>\n    -e/--encrypt:  To force encryption of an ")
+		fmt.Printf("already encrypted archive.\n                   Only ")
 		fmt.Printf("enc-encrypted archives get decrypted (recognizable ")
-		fmt.Printf("by\n                    starting with 4 distinctive 'magic' ")
-		fmt.Printf("bytes 0x01010101). They\n                    get decrypted ")
+		fmt.Printf("by\n                   starting with 4 distinctive 'magic' ")
+		fmt.Printf("bytes 0x01010101). They\n                   get decrypted ")
 		fmt.Printf("into a directory ")
-		fmt.Printf("\"enc_<random-suffix>\".\n                    The default ")
+		fmt.Printf("\"enc_<random-suffix>\".\n                   The default ")
 		fmt.Printf("operation is encryption, resulting in ")
-		fmt.Printf("an\n                    enc-encrypted compressed archive, ")
-		fmt.Printf("ending with \".enc\".\n    -p|--password:  Instead of ")
+		fmt.Printf("an\n                   enc-encrypted compressed archive, ")
+		fmt.Printf("ending with \".enc\".\n    -p|--prompt:   Instead of ")
 		fmt.Printf("encrypting with a randomly generated 32 ")
-		fmt.Printf("byte\n                    hexadecimal password, the user is ")
-		fmt.Printf("prompted for a password.\n    -h|--help:      Only show this ")
-		fmt.Println("help text, nothing else")
+		fmt.Printf("byte\n                   hexadecimal password, the user is ")
+		fmt.Printf("prompted for a password.\n    -s|--stdin:    Instead of ")
+		fmt.Printf("encrypting with a randomly generated 32 ")
+		fmt.Printf("byte\n                   hexadecimal password, the password is ")
+		fmt.Printf("read from stdin.\n    -h|--help:     Just show this help text.\n")
 	}
 	os.Exit(ret)
 }
