@@ -42,16 +42,16 @@ Encrypting enc-encrypted archive `file.enc` again: `enc --encrypt file.enc`
 `go get github.com/pepa65/enc`
 * **Go build/install**
   - `git clone https://github.com/pepa65/enc; cd enc; go install`
-  - Smaller binary: `go build -ldflags="-s -w"; upx --brute enc`
+  - Smaller binary: `go build -ldflags="-s -w"; upx enc`
 * **Build for other architectures**
   - `GOOS=linux GOARCH=arm go build -ldflags="-s -w" -o enc_pi`
-  - `GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w" -o enc_bsd`
+  - `GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w" -o enc_freebsd`
   - `GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o enc_osx`
   - `GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o enc.exe`
 * **Download binaries**
   - [Linux (amd64)](https://github.com/pepa65/enc/raw/master/enc)
   - [Linux (arm)](https://github.com/pepa65/enc/raw/master/enc_pi)
-  - [FreeBSD](https://github.com/pepa65/enc/raw/master/enc_bsd)
+  - [FreeBSD](https://github.com/pepa65/enc/raw/master/enc_freebsd)
   - [OSX](https://github.com/pepa65/enc/raw/master/enc_osx)
   - [Windows (x86_64)](https://github.com/pepa65/enc/raw/master/enc.exe)
 * **Add magic for the `file` command**

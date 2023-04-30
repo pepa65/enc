@@ -10,7 +10,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"syscall"
@@ -63,7 +62,7 @@ func main() {
 	if err != nil { // Not an encrypted file, try encrypting
 		encrypt = true
 	}
-	if !encrypt && n == 4 && bytes.Compare(firstfour, magic) == 0 {
+	if !encrypt && n == 4 && bytes.Equal(firstfour, magic) {
 		decryptPath(path)
 		return
 	}
@@ -72,7 +71,7 @@ func main() {
 
 func decryptPath(path string) {
 	// Read encrypted archive, magic bytes already checked
-	file, err := ioutil.ReadFile(path)
+	file, err := os.ReadFile(path)
 	if err != nil {
 		usage(1, "Error: cannot open " + self + "-archive: " + path)
 	}

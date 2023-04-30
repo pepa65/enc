@@ -40,6 +40,9 @@ func compress(path string, buf io.Writer) error {
 		}
 	} else if mode.IsDir() { // Directory
 		filepath.Walk(path, func(file string, fi os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
 			header, err := tar.FileInfoHeader(fi, file)
 			if err != nil {
 				return err
@@ -65,7 +68,7 @@ func compress(path string, buf io.Writer) error {
 			return nil
 		})
 	} else {
-		return fmt.Errorf("Error: file type not supported")
+		return fmt.Errorf("error: file type not supported")
 	}
 
 	if err := tw.Close()
@@ -110,7 +113,7 @@ func decompress(src io.Reader, dst string) error {
 
 		// Validate name against path traversal
 		if !validRelPath(header.Name) {
-			return fmt.Errorf("Error: tar contained invalid name error %q", target)
+			return fmt.Errorf("error: tar contained invalid name error %q", target)
 		}
 
 		// Add dst + reformat slashes according to system
@@ -130,8 +133,7 @@ func decompress(src io.Reader, dst string) error {
 			}
 		// New file: create 0755
 		case tar.TypeReg:
-			fileToWrite, err :=
-				os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			fileToWrite, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
 				return err
 			}
