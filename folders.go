@@ -146,5 +146,4 @@ func decompress(src io.Reader, dst string) error {
 			fileToWrite.Close()
 		}
 	}
-	return nil
 }

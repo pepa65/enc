@@ -14,12 +14,12 @@ import (
 	"strings"
 	"syscall"
 
-	"golang.org/x/crypto/ssh/terminal"
+	terminal "golang.org/x/term"
 )
 
 var (
-	self  string
-	magic = []byte{1, 1, 1, 1}
+	self     string
+	magic    = []byte{1, 1, 1, 1}
 	password = false
 )
 
@@ -37,12 +37,15 @@ func main() {
 	i = 1
 	for i < len(os.Args) {
 		switch os.Args[i] {
-		case "-e","--encrypt": encrypt = true
-		case "-p","--password": password = true
-		case "-h","--help": usage(1, "")
+		case "-e", "--encrypt":
+			encrypt = true
+		case "-p", "--password":
+			password = true
+		case "-h", "--help":
+			usage(1, "")
 		default:
 			if os.Args[i][0] == '-' {
-				usage(1, "Error: unknown commandline option: " + os.Args[i])
+				usage(1, "Error: unknown commandline option: "+os.Args[i])
 			}
 			if path != "" {
 				usage(1, "Error: only 1 file/directory allowed")
@@ -55,7 +58,7 @@ func main() {
 	// If path is a file and has the right magic: try decrypting archive
 	f, err := os.Open(path)
 	if err != nil {
-		usage(1, "Cannot find path: '" + path + "'")
+		usage(1, "Cannot find path: '"+path+"'")
 	}
 	firstfour := make([]byte, 4)
 	n, err := f.Read(firstfour)
@@ -73,7 +76,7 @@ func decryptPath(path string) {
 	// Read encrypted archive, magic bytes already checked
 	file, err := os.ReadFile(path)
 	if err != nil {
-		usage(1, "Error: cannot open " + self + "-archive: " + path)
+		usage(1, "Error: cannot open "+self+"-archive: "+path)
 	}
 	nonce := file[4:16]
 	key := promptKey()
@@ -93,7 +96,7 @@ func decryptPath(path string) {
 	}
 	err = os.MkdirAll(dir, 0755)
 	if err != nil {
-		usage(2, "Error: cannot create directory for decryption: " + dir)
+		usage(2, "Error: cannot create directory for decryption: "+dir)
 	}
 
 	// Decompress
@@ -113,8 +116,7 @@ func encryptPath(path string) {
 
 	// Compress file or directory
 	var buf bytes.Buffer
-	if err := compress(path, &buf)
-	err != nil {
+	if err := compress(path, &buf); err != nil {
 		usage(1, fmt.Sprintf("Error: path '%v' not found", path))
 	}
 	// Encrypt compressed content
@@ -146,7 +148,7 @@ func encryptPath(path string) {
 		}
 		sha := sha256.Sum256([]byte(pwd))
 		key = sha[0:32]
-  } else {
+	} else {
 		io.ReadFull(rand.Reader, key)
 	}
 	AESgcm := wrapKey(key)
