@@ -1,7 +1,10 @@
 module github.com/pepa65/enc
 
-go 1.19
+go 1.26.0
 
-require golang.org/x/term v0.13.0
+require (
+	golang.org/x/crypto v0.57.0
+	golang.org/x/term v0.46.0
+)
 
-require golang.org/x/sys v0.13.0 // indirect
+require golang.org/x/sys v0.48.0 // indirect

@@ -11,96 +11,156 @@ import (
 )
 
 func compress(path string, buf io.Writer) error {
-	// tar(gzip(buf)
 	zw := gzip.NewWriter(buf)
 	tw := tar.NewWriter(zw)
 
-	// Is path directory/file
-	f, err := os.Stat(path)
+	info, err := os.Stat(path)
 	if err != nil {
+		_ = tw.Close()
+		_ = zw.Close()
 		return err
 	}
-	mode := f.Mode()
-	if mode.IsRegular() { // Regular file
-		header, err := tar.FileInfoHeader(f, path)
+
+	if info.Mode().IsRegular() {
+		header, err := tar.FileInfoHeader(info, path)
 		if err != nil {
+			_ = tw.Close()
+			_ = zw.Close()
 			return err
 		}
-		if err := tw.WriteHeader(header)
-		err != nil {
+
+		header.Name = filepath.ToSlash(path)
+
+		if err := tw.WriteHeader(header); err != nil {
+			_ = tw.Close()
+			_ = zw.Close()
 			return err
 		}
+
 		data, err := os.Open(path)
 		if err != nil {
+			_ = tw.Close()
+			_ = zw.Close()
 			return err
 		}
-		if _, err := io.Copy(tw, data)
-		err != nil {
-			return err
+
+		_, copyErr := io.Copy(tw, data)
+		closeErr := data.Close()
+
+		if copyErr != nil {
+			_ = tw.Close()
+			_ = zw.Close()
+			return copyErr
 		}
-	} else if mode.IsDir() { // Directory
-		filepath.Walk(path, func(file string, fi os.FileInfo, err error) error {
+		if closeErr != nil {
+			_ = tw.Close()
+			_ = zw.Close()
+			return closeErr
+		}
+	} else if info.IsDir() {
+		err := filepath.Walk(path, func(file string, fi os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
+
+			// Do not archive special filesystem objects.
+			if !fi.Mode().IsRegular() && !fi.IsDir() {
+				return fmt.Errorf("unsupported file type: %q", file)
+			}
+
 			header, err := tar.FileInfoHeader(fi, file)
 			if err != nil {
 				return err
 			}
 
-			// Real name (see https://golang.org/src/archive/tar/common.go?#L626)
 			header.Name = filepath.ToSlash(file)
-			if err := tw.WriteHeader(header)
-			err != nil {
+
+			if err := tw.WriteHeader(header); err != nil {
 				return err
 			}
-			// No directory: write
-			if !fi.IsDir() {
-				data, err := os.Open(file)
-				if err != nil {
-					return err
-				}
-				if _, err := io.Copy(tw, data)
-				err != nil {
-					return err
-				}
+
+			if fi.IsDir() {
+				return nil
 			}
-			return nil
+
+			data, err := os.Open(file)
+			if err != nil {
+				return err
+			}
+
+			_, copyErr := io.Copy(tw, data)
+			closeErr := data.Close()
+
+			if copyErr != nil {
+				return copyErr
+			}
+			return closeErr
 		})
+		if err != nil {
+			_ = tw.Close()
+			_ = zw.Close()
+			return err
+		}
 	} else {
+		_ = tw.Close()
+		_ = zw.Close()
 		return fmt.Errorf("error: file type not supported")
 	}
 
-	if err := tw.Close()
-	err != nil {
+	if err := tw.Close(); err != nil {
+		_ = zw.Close()
 		return err
 	}
-	if err := zw.Close()
-	err != nil {
+
+	if err := zw.Close(); err != nil {
 		return err
 	}
+
 	return nil
+
 }
 
-// Check path traversal and correct forward slashes
+// validRelPath accepts only ordinary relative paths using '/' separators.
+// In particular, it rejects absolute paths and any path containing a ".."
+// component. Backslashes are rejected so that Windows-style paths cannot
+// acquire a different meaning on another platform.
 func validRelPath(p string) bool {
-	if p == "" || strings.Contains(p, `\`) || strings.HasPrefix(p, "/") ||
-			strings.Contains(p, "../") {
+	if p == "" {
 		return false
 	}
+
+	if strings.ContainsRune(p, '\\') {
+		return false
+	}
+
+	if strings.HasPrefix(p, "/") {
+		return false
+	}
+
+	clean := filepath.ToSlash(filepath.Clean(p))
+	if clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
+		return false
+	}
+
+	for _, component := range strings.Split(clean, "/") {
+		if component == ".." || component == "" {
+			return false
+		}
+	}
+
 	return true
+
 }
 
 func decompress(src io.Reader, dst string) error {
-	// ungzip
 	zr, err := gzip.NewReader(src)
 	if err != nil {
 		return err
 	}
-	// untar
+	defer zr.Close()
+
 	tr := tar.NewReader(zr)
 
-	// Uncompress each element
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -109,41 +169,62 @@ func decompress(src io.Reader, dst string) error {
 		if err != nil {
 			return err
 		}
-		target := header.Name
 
-		// Validate name against path traversal
 		if !validRelPath(header.Name) {
-			return fmt.Errorf("error: tar contained invalid name error %q", target)
+			return fmt.Errorf("tar contained invalid path %q", header.Name)
 		}
 
-		// Add dst + reformat slashes according to system
-		target = filepath.Join(dst, header.Name)
-		// if no join is needed, replace with ToSlash:
-		// target = filepath.ToSlash(header.Name)
+		target := filepath.Join(dst, filepath.FromSlash(header.Name))
+
+		// Do not permit the resulting path to escape dst.
+		relative, err := filepath.Rel(dst, target)
+		if err != nil || relative == ".." ||
+			strings.HasPrefix(relative, ".."+string(os.PathSeparator)) {
+			return fmt.Errorf("tar path escapes destination: %q", header.Name)
+		}
 
 		switch header.Typeflag {
-		// New directory: create 0755
 		case tar.TypeDir:
-			if _, err := os.Stat(target)
-			err != nil {
-				if err := os.MkdirAll(target, 0755)
-				err != nil {
-					return err
-				}
+			if err := os.MkdirAll(target, 0755); err != nil {
+				return err
 			}
-		// New file: create 0755
-		case tar.TypeReg:
-			fileToWrite, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+
+		case tar.TypeReg, tar.TypeRegA:
+			parent := filepath.Dir(target)
+			if err := os.MkdirAll(parent, 0755); err != nil {
+				return err
+			}
+
+			fileToWrite, err := os.OpenFile(
+				target,
+				os.O_WRONLY|os.O_CREATE|os.O_EXCL,
+				os.FileMode(header.Mode)&0777,
+			)
 			if err != nil {
 				return err
 			}
-			// Copy contents
-			if _, err := io.Copy(fileToWrite, tr)
-			err != nil {
-				return err
+
+			_, copyErr := io.Copy(fileToWrite, tr)
+			closeErr := fileToWrite.Close()
+
+			if copyErr != nil {
+				_ = os.Remove(target)
+				return copyErr
 			}
-			// Close explicitly (defer waits for everything to be finished)
-			fileToWrite.Close()
+			if closeErr != nil {
+				_ = os.Remove(target)
+				return closeErr
+			}
+
+		default:
+			// Do not extract symlinks, hard links, devices, FIFOs, or
+			// other special tar entries.
+			return fmt.Errorf(
+				"unsupported tar entry type %d for %q",
+				header.Typeflag,
+				header.Name,
+			)
 		}
 	}
+
 }
