@@ -18,8 +18,8 @@ import (
 
 var (
 	self    string
-	version = "1.0.0"
-	magic   = []byte{'e', 'n', 'c', '1'}
+	version = "6.0.0"
+	magic   = []byte{'e', 'n', 'c', '6'}
 )
 
 const (

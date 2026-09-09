@@ -1,4 +1,4 @@
-# Enc v1.0.0
+# Enc v6.0.0
 **Encrypt/decrypt files/directories**
 * Repo: https://github.com/pepa65/enc
 * After: https://github.com/mimoo/eureka
@@ -6,7 +6,7 @@
 
 ## Usage
 ```
-enc v1.0.0 - Encrypt/decrypt files/directories
+enc v6.0.0 - Encrypt/decrypt files/directories
 Usage: enc [-e|--encrypt] [-f|--force] [-h|--help] <path>
     -e|--encrypt:  Force encryption of an already encrypted archive.
     -f|--force:    Replace an existing .enc archive.
