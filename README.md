@@ -52,6 +52,6 @@ GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o enc.exe
   - [FreeBSD](https://github.com/pepa65/enc/raw/master/enc_freebsd)
   - [OSX](https://github.com/pepa65/enc/raw/master/enc_osx)
   - [Windows (x86_64)](https://github.com/pepa65/enc/raw/master/enc.exe)
-* **Add magic for the `file` command**
-  - `echo '0 long 0x656e6331 enc v1 encrypted data, gitlab.com/pepa65/enc' |
+* **Add "magic" for the `file` command**
+  - `echo '0 string enc6 enc v6 encrypted data, gitlab.com/pepa65/enc' |
     sudo tee -a /etc/magic`
